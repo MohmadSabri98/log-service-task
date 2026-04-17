@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 public class ChunkTask implements Callable<ChunkResult> {
 
@@ -19,8 +21,8 @@ public class ChunkTask implements Callable<ChunkResult> {
 
     @Override
     public ChunkResult call() throws Exception {
-
-        ProcessBuilder pb = new ProcessBuilder("python3", "python/analyzer.py");
+        // Find python path, use just python for Windows by default or fallback
+        ProcessBuilder pb = new ProcessBuilder("python", "src/main/resources/analyzer.py");
         Process process = pb.start();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -31,20 +33,36 @@ public class ChunkTask implements Callable<ChunkResult> {
                 "lines", lines
         );
 
-        // send input
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
             writer.write(mapper.writeValueAsString(payload));
+        } catch (IOException e) {
+            process.destroyForcibly();
+            throw new RuntimeException("Failed to send input to python process: " + e.getMessage(), e);
         }
 
-        // read output
         String output;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             output = reader.readLine();
         }
 
-        int exit = process.waitFor();
+        boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+        if (!finished) {
+            process.destroyForcibly();
+            throw new RuntimeException("Python process timeout after 10 seconds");
+        }
+
+        int exit = process.exitValue();
         if (exit != 0) {
-            throw new RuntimeException("Python failed");
+            // capture error stream
+            String errorMsg = "";
+            try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                errorMsg = errReader.readLine();
+            }
+            throw new RuntimeException("Python failed with exit code " + exit + ". Error: " + errorMsg);
+        }
+
+        if (output == null || output.trim().isEmpty()) {
+            throw new RuntimeException("Python process returned no output");
         }
 
         return mapper.readValue(output, ChunkResult.class);
