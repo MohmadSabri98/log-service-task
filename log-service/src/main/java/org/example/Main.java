@@ -20,7 +20,9 @@ public class Main {
         List<Future<ChunkResult>> futures = new ArrayList<>();
         ResultAggregator aggregator = new ResultAggregator();
 
-        Path inputPath = Paths.get("src", "main", "resources", "input");
+        String inputDir = System.getenv().getOrDefault("INPUT_DIR", "src/main/resources/input");
+        String taskPath = System.getenv().getOrDefault("PYTHON_SCRIPT", "src/main/resources/analyzer.py");
+        Path inputPath = Paths.get(inputDir);
 
         if (Files.exists(inputPath)) {
             Files.list(inputPath)
@@ -37,7 +39,8 @@ public class Main {
                                         path.getFileName().toString(),
                                         chunkId++,
                                         chunk,
-                                        i
+                                        i,
+                                        taskPath
                                 );
 
                                 futures.add((Future<ChunkResult>) pool.submit((Callable<ChunkResult>) task));

@@ -12,18 +12,19 @@ public class ChunkTask implements Callable<ChunkResult> {
     private final int chunkId;
     private final List<String> lines;
     private final int startLine ;
-
-    public ChunkTask(String file, int chunkId, List<String> lines,int startLine) {
+    private final String taskPath;
+    public ChunkTask(String file, int chunkId, List<String> lines,int startLine,String taskPath) {
         this.file = file;
         this.chunkId = chunkId;
         this.lines = lines;
         this.startLine=startLine;
+        this.taskPath= taskPath;
     }
 
     @Override
     public ChunkResult call() throws Exception {
 
-        ProcessBuilder pb = new ProcessBuilder("python", "src/main/resources/analyzer.py");
+        ProcessBuilder pb = new ProcessBuilder("python", taskPath);
         Process process = pb.start();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -32,7 +33,7 @@ public class ChunkTask implements Callable<ChunkResult> {
                 "file", file,
                 "chunk_id", chunkId,
                 "lines", lines,
-                "startLine",startLine
+                "start_line",startLine
 
         );
 
