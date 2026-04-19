@@ -10,17 +10,18 @@ RULES = {
     "PII": re.compile(r"\b[\w.-]+@[\w.-]+\.\w+\b")
 }
 
-def analyze(lines, file_name, chunk_id):
+def analyze(lines, file_name, chunk_id, start_line):
     counts = {k: 0 for k in RULES}
     flagged = []
 
     for idx, line in enumerate(lines):
         for rule, pattern in RULES.items():
+            absolute_line = start_line + idx  
             if pattern.search(line):
                 counts[rule] += 1
                 flagged.append({
                     "file": file_name,
-                    "line": idx,
+                    "line": absolute_line,
                     "rule": rule,
                     "excerpt": line.strip()
                 })
@@ -37,6 +38,6 @@ if __name__ == "__main__":
     raw = sys.stdin.read()
 
     payload = json.loads(raw)
-    result = analyze(payload["lines"], payload["file"], payload["chunk_id"])
+    result = analyze(payload["lines"], payload["file"], payload["chunk_id"], payload["start_line"])
 
     print(json.dumps(result))

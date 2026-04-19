@@ -33,11 +33,11 @@ public class Main {
                             int chunkId = 0;
                             for (int i = 0; i < lines.size(); i += CHUNK_SIZE) {
                                 List<String> chunk = lines.subList(i, Math.min(i + CHUNK_SIZE, lines.size()));
-
                                 ChunkTask task = new ChunkTask(
                                         path.getFileName().toString(),
                                         chunkId++,
-                                        chunk
+                                        chunk,
+                                        i
                                 );
 
                                 futures.add((Future<ChunkResult>) pool.submit((Callable<ChunkResult>) task));
