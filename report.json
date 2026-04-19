@@ -1,0 +1,1 @@
+{"scanned_files":2,"total_lines":26000,"total_flagged":22846,"counts_by_rule":{"PII":527,"TRAVERSAL":681,"CMD_CHAINING":20510,"SECRETS":498,"SQLI":630},"top_files":[{"file":"access.log","flagged":21654},{"file":"app.log","flagged":1192}]}
